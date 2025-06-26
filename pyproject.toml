@@ -1,0 +1,11 @@
+[project]
+name = "simple-discussion-agents"
+version = "0.0.1"
+description = "There will be two agents one talking in favor and one against the topic. These models will have access to tools and have own personality, but this will be kept super simple a smaller part of upcoming big project."
+readme = "README.md"
+authors = [
+    { name = "Suraj Airi", email = "surajairi.ml@gmail.com" }
+]
+license = { text = "MIT license" }
+requires-python = ">=3.12"
+dependencies = []
