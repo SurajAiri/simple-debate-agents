@@ -1,253 +1,223 @@
-# Simple Discussion Agents Architecture
+# Multi-Agents Simple Debate Graph Architecture
 
 ## Overview
 
-This project implements a comprehensive GenAI application using modern AI orchestration frameworks. The architecture follows a modular design pattern with clear separation of concerns, making it scalable, maintainable, and easy to extend.
+The Simple Discussion Agents system implements a multi-agent debate architecture using LangGraph, where three specialized AI agents collaborate to conduct structured debates. The system leverages a state-driven graph execution model to orchestrate intelligent discussions between opposing viewpoints, culminating in an impartial evaluation.
 
-## Project Structure
+## Core Architecture Components
 
-```
-simple-discussion-agents/
-│
-├── .gitignore                  # Git ignore patterns
-├── .env.example               # Environment variables template
-├── LICENSE                    # Project license
-├── AUTHORS.rst               # Project contributors
-├── README.md                 # Project overview and setup
-├── pyproject.toml           # Dependencies and project metadata (uv-based)
-├── ruff.toml                # Code formatting and linting configuration
-│
-├── configs/                 # Configuration management
-│   └── config.yaml         # Main configuration file (API keys, settings)
-│
-├── docs/                   # Project documentation
-│   └── architecture.md    # This architecture document
-│
-├── src/                    # Main source code directory
-│   ├── __init__.py
-│   ├── main.py            # Application entry point
-│   │
-│   ├── prompts/           # Prompt template management
-│   │   └── __init__.py
-│   │
-│   ├── agents/            # AI agent implementations
-│   │   └── __init__.py
-│   │
-│   ├── chains/            # Processing chains and workflows
-│   │   └── __init__.py
-│   │
-│   ├── tools/             # Custom tools and integrations
-│   │   └── __init__.py
-│   │
-│   ├── memory/            # Memory and context management
-│   │   └── __init__.py
-│   │
-│   └── utils/             # Utility functions and helpers
-│       └── __init__.py
-│
-├── scripts/               # Automation and deployment scripts
-│   └── __init__.py
-│
-├── tests/                 # Test suite
-│   └── __init__.py
-│
-└── logs/                  # Application logs (generated at runtime)
-    └── .gitkeep
-```
+### 1. Agent Hierarchy
 
-## Core Components
+The system employs a three-agent architecture with distinct roles and responsibilities:
 
-### 1. Agents (`src/agents/`)
+#### Primary Debate Agents
+- **Favor Agent** ([`FavorAgent`](/src/agents/favor_agent.py)): Advocates for the debate topic
+- **Against Agent** ([`AgainstAgent`](/src/agents/against_agent.py)): Opposes the debate topic
 
-The agents directory contains the core AI agent implementations that orchestrate the application's intelligence.
+#### Evaluation Agent
+- **Judge Agent** ([`JudgeAgent`](/src/agents/judge_agent.py)): Provides impartial evaluation and conclusion
 
-**Key Features:**
-- **Agent Orchestration**: Main conversational agents that handle user interactions
-- **State Management**: Manages conversation state and context across interactions
-- **Workflow Coordination**: Orchestrates complex multi-step AI workflows
-- **Tool Integration**: Seamlessly integrates with various tools and external services
+### 2. State Management Architecture
 
-**Example Structure:**
+The debate system uses a centralized state model ([`DebateState`](/src/models/debate_state.py)) that maintains:
+
 ```python
-# src/agents/assistant_agent.py
-class AssistantAgent:
-    """Main conversational agent with workflow orchestration"""
-    def __init__(self, config: dict):
-        self.tools = []
-        self.memory = None
-        self.state = {}
-    
-    async def process_message(self, message: str) -> str:
-        # Agent processing logic
-        pass
+DebateState = {
+    "topic": str,                    # Current debate topic
+    "favor_strategy": str,           # Favor agent's strategy
+    "against_strategy": str,         # Against agent's strategy  
+    "messages": List[Tuple[str, str]], # Conversation history
+    "current_turn": AgentRole,       # Active agent indicator
+    "current_step": int,             # Current debate round
+    "max_steps": int                 # Maximum debate rounds
+}
 ```
 
-### 2. Tools (`src/tools/`)
+## Graph Execution Flow
 
-Custom tools that extend agent capabilities with specific functionalities.
+### 1. Control Flow Architecture
 
-**Key Features:**
-- **Modular Design**: Each tool implements a standardized interface
-- **External Integrations**: Connect to APIs, databases, and external services
-- **Reusable Components**: Tools can be shared across different agents
-- **Type Safety**: Proper input/output validation and error handling
-
-**Example Tools:**
-- Search tools for web/document retrieval
-- Calculator tools for mathematical operations
-- API integration tools for external services
-- File processing tools for document handling
-
-### 3. Chains (`src/chains/`)
-
-Processing chains for specific task sequences and workflows.
-
-**Key Features:**
-- **Sequential Processing**: Chains multiple operations together
-- **Reusable Workflows**: Common patterns extracted into reusable chains
-- **Error Handling**: Robust error recovery and fallback mechanisms
-- **Async Support**: Full asynchronous processing capabilities
-
-**Example Chains:**
-- Document summarization chains
-- Data analysis and processing chains
-- Multi-step reasoning chains
-- Content generation workflows
-
-### 4. Memory (`src/memory/`)
-
-Handles conversation history, context management, and persistent storage.
-
-**Key Features:**
-- **Context Persistence**: Maintains conversation history across sessions
-- **Flexible Storage**: Supports file-based, database, and cloud storage
-- **Memory Optimization**: Efficient storage and retrieval of relevant context
-- **Session Management**: Handles multiple concurrent user sessions
-
-**Storage Options:**
-- Local file-based storage (default)
-- Database integration (PostgreSQL, MongoDB)
-- Vector databases (Chroma, Pinecone)
-- Cloud storage solutions
-
-### 5. Prompts (`src/prompts/`)
-
-Centralized prompt template management for consistent AI interactions.
-
-**Key Features:**
-- **Template System**: Structured prompt templates with variable substitution
-- **Version Control**: Track and manage prompt versions
-- **Easy Maintenance**: Modify prompts without code changes
-- **Consistency**: Ensure consistent AI behavior across the application
-
-### 6. Utils (`src/utils/`)
-
-Common utilities and helper functions used throughout the application.
-
-**Key Features:**
-- **Logging**: Structured logging with configurable levels
-- **Configuration**: Configuration loading and validation
-- **Error Handling**: Common error handling patterns
-- **Data Processing**: Data transformation and validation utilities
-
-## Data Flow Architecture
+The debate follows a deterministic state machine pattern implemented in [`DebateGraph`](/src/graph/debate_graph.py):
 
 ```
-User Input
-    ↓
-main.py (Entry Point)
-    ↓
-Agent Processing
-    ↓
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│     Tools       │    │     Chains      │    │     Memory      │
-│  (External APIs,│    │  (Processing    │    │  (Context &     │
-│   Calculations, │ ←→ │   Workflows,    │ ←→ │   History       │
-│   etc.)         │    │   Analysis)     │    │   Storage)      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-    ↓
-Response Generation
-    ↓
-User Output
+START → agent_turn_check → [favor_agent | against_agent] → debate_complete_check → [continue | judge_agent] → END
 ```
 
-## Configuration Management
+### 2. Turn-Based Execution Model
 
-### Environment Configuration (`.env`)
-- API keys and secrets
-- Database connection strings
-- External service endpoints
-- Runtime environment settings
+```mermaid
+graph TD
+    A[Start Debate] --> B[Agent Turn Check]
+    B -->|Favor Turn| C[Favor Agent]
+    B -->|Against Turn| D[Against Agent]
+    C --> E[Debate Complete Check]
+    D --> E
+    E -->|Continue| B
+    E -->|Complete| F[Judge Agent]
+    F --> G[End Debate]
+```
 
-### Application Configuration (`configs/config.yaml`)
-- Agent behavior settings
-- Tool configurations
-- Memory settings
-- Logging levels and formats
+### 3. Phase-Based Agent Behavior
 
-## Testing Strategy
+Each debate agent exhibits different behaviors based on the current debate phase:
 
-### Unit Testing (`tests/`)
-- **Agent Testing**: Test agent behavior and decision-making
-- **Tool Testing**: Validate tool functionality and error handling
-- **Chain Testing**: Verify workflow execution and output quality
-- **Memory Testing**: Test persistence and retrieval operations
+#### Introduction Phase (`current_step == 1`)
+- **Favor Agent**: Introduces topic and presents initial supporting position
+- **Against Agent**: Introduces counter-perspective and establishes opposition stance
 
-### Testing Features:
-- Async testing support with pytest-asyncio
-- Mock external API calls for reliable testing
-- Fixture-based test data management
-- Coverage reporting and quality metrics
+#### Argumentation Phase (`1 < current_step < max_steps`)
+- **Favor Agent**: Develops supporting arguments and responds to opposition
+- **Against Agent**: Presents counter-arguments and challenges favor position
 
-## Deployment Architecture
+#### Conclusion Phase (`current_step >= max_steps`)
+- **Favor Agent**: Summarizes strongest supporting points
+- **Against Agent**: Summarizes strongest opposing points
+- **Judge Agent**: Evaluates entire debate and renders verdict
 
-### Local Development
-- UV-based dependency management
-- Hot-reload development server
-- Local file-based storage
-- Development logging and debugging
+## Agent Intelligence Architecture
 
-### Production Deployment
-- Docker containerization support
-- Environment-based configuration
-- Structured logging for monitoring
-- Scalable storage solutions
+### 1. Base Agent Framework
 
-### Key Deployment Features:
-- **Containerization**: Docker support for consistent deployments
-- **Configuration Management**: Environment-based settings
-- **Monitoring**: Structured logging and health checks
-- **Scalability**: Horizontal scaling support
+All agents inherit from [`DebateBaseAgent`](/src/agents/base_agent.py), providing:
 
-## Security Considerations
+- **Context Processing**: Handles debate state and message history
+- **LLM Integration**: Manages language model interactions
+- **Action Dispatching**: Routes requests to appropriate response methods
+- **Role Enforcement**: Maintains agent-specific behavioral constraints
 
-- **API Key Management**: Secure storage and rotation of API keys
-- **Input Validation**: Comprehensive input sanitization and validation
-- **Rate Limiting**: Protection against abuse and resource exhaustion
-- **Error Handling**: Secure error messages without sensitive information disclosure
+### 2. Prompt Engineering System
 
-## Performance Optimization
+The architecture employs a structured prompt system ([`ActionPrompts`](/src/prompts/action_prompts.py)) that provides:
 
-- **Async Processing**: Full asynchronous operation support
-- **Memory Efficiency**: Optimized memory usage and garbage collection
-- **Caching**: Intelligent caching of frequently accessed data
-- **Resource Management**: Proper resource cleanup and connection pooling
+- **Context-Aware Templates**: Dynamic prompt generation based on debate state
+- **Role-Specific Instructions**: Tailored guidance for each agent type
+- **Consistency Mechanisms**: Ensures coherent agent behavior across phases
 
-## Extensibility
+### 3. Agent Specialization
 
-The architecture is designed for easy extension:
+#### Favor Agent Specialization
+```python
+# System prompt focus: Logical, persuasive, supportive arguments
+# Behavioral constraints: Defend core ideas, address counterpoints respectfully
+# Tone requirements: Confident, constructive
+```
 
-- **Plugin System**: Easy addition of new tools and agents
-- **Modular Design**: Components can be developed and tested independently
-- **Configuration-Driven**: Many behaviors can be modified through configuration
-- **API Integration**: Standardized interfaces for external service integration
+#### Against Agent Specialization  
+```python
+# System prompt focus: Critical evaluation, logical objections
+# Behavioral constraints: Highlight flaws, risks, weaknesses
+# Tone requirements: Composed, assertive, thoughtful
+```
 
-## Getting Started
+#### Judge Agent Specialization
+```python
+# System prompt focus: Impartial evaluation, balanced assessment
+# Behavioral constraints: Analyze clarity, logic, persuasiveness
+# Evaluation criteria: Objective, fair, comprehensive
+```
 
-1. **Setup Environment**: Configure `.env` file with necessary API keys
-2. **Install Dependencies**: Use `uv` to install project dependencies
-3. **Configure Application**: Modify `configs/config.yaml` as needed
-4. **Run Application**: Execute `python src/main.py` to start the application
-5. **Run Tests**: Execute test suite to validate functionality
+## Communication Architecture
 
-This architecture provides a solid foundation for building scalable, maintainable GenAI applications while maintaining flexibility for future enhancements and modifications.
+### 1. Message Protocol
+
+The system uses a structured message format:
+```python
+Message = Tuple[AgentName: str, Content: str]
+```
+
+### 2. State Synchronization
+
+- **Shared State**: All agents access the same [`DebateState`](/src/models/debate_state.py)
+- **Immutable History**: Message history preserves complete debate context
+- **Turn Management**: [`AgentRole`](/src/models/debate_state.py) enum ensures proper sequencing
+
+### 3. Context Propagation
+
+Each agent receives:
+- Complete conversation history
+- Current debate phase information
+- Role-specific contextual cues
+- Strategic guidance based on debate progression
+
+## LLM Integration Architecture
+
+### 1. Model Abstraction Layer
+
+The system abstracts LLM interactions through:
+- **BaseLanguageModel Interface**: Provides consistent LLM access
+- **Configurable Parameters**: Supports temperature, token limits, model selection
+- **Response Processing**: Standardizes output handling across agents
+
+### 2. Agent-LLM Binding
+
+```python
+# Each agent receives a dedicated LLM instance
+FavorAgent(llm=ChatGoogleGenerativeAI(...))
+AgainstAgent(llm=ChatGoogleGenerativeAI(...))  
+JudgeAgent(llm=ChatGoogleGenerativeAI(...))
+```
+
+### 3. Prompt Execution Pipeline
+
+```
+Agent Request → Prompt Template → Context Injection → LLM Invocation → Response Processing → State Update
+```
+
+## Scalability and Extensibility
+
+### 1. Agent Extensibility
+
+The base agent architecture supports:
+- **Custom Agent Types**: Easy creation of specialized debate roles
+- **Behavioral Modification**: Configurable agent personalities and strategies
+- **Tool Integration**: Capability for agents to use external tools and resources
+
+### 2. Graph Flexibility
+
+The LangGraph implementation allows:
+- **Dynamic Flow Modification**: Runtime changes to debate structure
+- **Conditional Logic**: Complex decision trees for debate progression
+- **Parallel Processing**: Potential for concurrent agent operations
+
+### 3. State Evolution
+
+The state management system supports:
+- **State Extensions**: Additional metadata and context tracking
+- **Custom Transitions**: Domain-specific debate flow modifications
+- **Event Handling**: Integration with external systems and notifications
+
+## Quality Assurance Architecture
+
+### 1. Input Validation
+
+- **State Validation**: Ensures debate state integrity at each step
+- **Message Validation**: Verifies agent response format and content
+- **Configuration Validation**: Validates agent configurations and parameters
+
+### 2. Error Handling
+
+- **Graceful Degradation**: System continues operation despite individual agent failures
+- **Recovery Mechanisms**: Automatic retry and fallback strategies
+- **Error Propagation**: Structured error reporting and debugging support
+
+### 3. Performance Monitoring
+
+- **Response Time Tracking**: Monitors agent response latencies
+- **Quality Metrics**: Evaluates debate coherence and engagement
+- **Resource Utilization**: Tracks LLM token usage and computational costs
+
+## Security and Governance
+
+### 1. Agent Behavior Constraints
+
+- **Role Enforcement**: Prevents agents from exceeding defined capabilities
+- **Content Filtering**: Ensures appropriate and respectful debate content
+- **Output Validation**: Verifies agent responses meet quality standards
+
+### 2. Access Control
+
+- **API Key Management**: Secure handling of LLM service credentials
+- **Rate Limiting**: Prevents abuse and manages resource consumption
+- **Audit Logging**: Tracks agent actions and system interactions
+
+This architecture provides a robust foundation for conducting structured, intelligent debates while maintaining

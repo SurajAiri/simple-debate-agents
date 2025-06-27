@@ -3,6 +3,7 @@ from src.graph.debate_graph import DebateGraph
 if __name__ == "__main__":
     # Initialize the DebateGraph with verbose output
     debate_graph = DebateGraph(verbose=False)
+    print("Starting the debate...")
     
     # Run a debate on a specific topic
     result = debate_graph.run_debate("Is AI beneficial for society?")
