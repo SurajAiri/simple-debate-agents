@@ -44,6 +44,7 @@ graph TD
 
 Each agent inherits from [`DebateBaseAgent`](src/agents/base_agent.py) and utilizes structured prompts from [`ActionPrompts`](src/prompts/action_prompts.py) for consistent behavior. For detailed architecture information, see [docs/architecture.md](docs/architecture.md).
 
+## Preview. 
 ![System Preview](resources/example1.jpg)
 
 ## Prerequisites
