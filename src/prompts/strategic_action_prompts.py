@@ -63,7 +63,7 @@ class StrategicActionPrompts:
             
             CONSTRAINTS:
             - Must be factually accurate
-            - 100-150 words maximum
+            - 100 words maximum
             - Professional and credible tone
             
             Create your opening statement that establishes your position with strong factual grounding.
@@ -143,7 +143,7 @@ class StrategicActionPrompts:
             - Am I presenting this fairly?
             - What would happen if opponent fact-checks this?
             
-            Create your strategic response (200-250 words) that simultaneously defends against opponent's points, advances your position with new factual arguments, and employs psychological tactics - all while maintaining complete factual accuracy.
+            Create your strategic response (150 words maximum) that simultaneously defends against opponent's points, advances your position with new factual arguments, and employs psychological tactics - all while maintaining complete factual accuracy.
             """
         )
     
@@ -178,7 +178,7 @@ class StrategicActionPrompts:
             - Making unsupported claims
             - Personal attacks or unfair characterizations
             
-            Create your conclusion (200-250 words) that provides satisfying closure while reinforcing why your position should prevail based on the facts and logic presented.
+            Create your conclusion (100 words maximum) that provides satisfying closure while reinforcing why your position should prevail based on the facts and logic presented.
             """
         )
     
@@ -224,7 +224,7 @@ class StrategicActionPrompts:
             - Evaluate evidence quality, not just persuasiveness
             - Consider how well each agent adapted to challenges
             
-            PROVIDE YOUR VERDICT (300-400 words):
+            PROVIDE YOUR VERDICT (150 words):
             1. Analysis of each agent's performance across all criteria
             2. Key strengths and weaknesses identified
             3. How well each handled factual challenges
@@ -274,6 +274,6 @@ class StrategicActionPrompts:
                - Would the outcome have been different with different strategies?
                - What does this reveal about effective debate tactics?
             
-            Provide comprehensive meta-analysis (400-500 words) examining the strategic, psychological, and factual dimensions of this debate.
+            Provide comprehensive meta-analysis (150 words) examining the strategic, psychological, and factual dimensions of this debate.
             """
         )

@@ -23,6 +23,12 @@ def print_debate(result: dict):
     print(f"\n{BOLD}{BG_DARK}{'='*80}{RESET}")
     print(f"{BOLD}{UNDERLINE}🏛️  DEBATE RESULTS: {result.get('topic', 'Unknown Topic')} 🏛️{RESET}")
     print(f"{BOLD}{BG_DARK}{'='*80}{RESET}\n")
+
+    # print strategies if available
+    if "favor_strategy" in result:
+        print(f"{BOLD}{colors['Favor']}Favor Strategy: {result['favor_strategy']}{RESET}")
+    if "against_strategy" in result:
+        print(f"{BOLD}{colors['Against']}Against Strategy: {result['against_strategy']}{RESET}")    
     
     # Print debate messages with enhanced styling
     for i, (agent, message) in enumerate(result.get("messages", []), 1):

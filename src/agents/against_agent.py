@@ -21,5 +21,6 @@ class AgainstAgent(DebateBaseAgent):
             role=AgentRole.AGAINST,
             system_prompt=AGAINST_AGENT_SYSTEM_PROMPT,
         ),
+        use_strategic_prompt: bool = False,
     ):
-        super().__init__(config, llm)
+        super().__init__(config, llm, use_strategic_prompt=use_strategic_prompt)

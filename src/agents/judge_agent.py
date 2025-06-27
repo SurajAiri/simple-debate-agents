@@ -23,8 +23,9 @@ class JudgeAgent(DebateBaseAgent):
             role=AgentRole.JUDGE,
             system_prompt=JUDGE_AGENT_SYSTEM_PROMPT,
         ),
+        use_strategic_prompt: bool = False,
     ):
-        super().__init__(config, llm)
+        super().__init__(config, llm, use_strategic_prompt=use_strategic_prompt)
 
     def judge_and_conclude(self, state: DebateState) -> str:
         """

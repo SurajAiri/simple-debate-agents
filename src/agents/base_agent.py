@@ -15,12 +15,17 @@ class DebateBaseAgent(ABC):
 
     # task -> introduce, create strategies, create arguments, conclude
 
-    def __init__(self, config: AgentConfig, llm: BaseLanguageModel):
+    def __init__(
+        self,
+        config: AgentConfig,
+        llm: BaseLanguageModel,
+        use_strategic_prompt: bool = False,
+    ):
         self.name = config.name
         self.role = config.role
         self.system_prompt = config.system_prompt
         self.llm = llm
-        self.use_strategic_prompt = config.use_strategic_prompt
+        self.use_strategic_prompt = use_strategic_prompt
 
     def introduce_topic(self, state: DebateState) -> str:
         """
@@ -31,7 +36,6 @@ class DebateBaseAgent(ABC):
 
         if self.use_strategic_prompt:
             strategy = state.get(self.role.value + "_strategy", "")
-            print(f"Using strategy {self.role.value}_strategy: {strategy}")
             context = StrategicActionPrompts.create_opening_prompt().format(
                 system_prompt=self.system_prompt,
                 role=self.role.value,
@@ -55,8 +59,6 @@ class DebateBaseAgent(ABC):
             raise ValueError("Invalid state.")
 
         if self.use_strategic_prompt:
-            strategy = state.get(self.role.value + "_strategy", "")
-            print(f"Using strategy {self.role.value + '_strategy'}: {strategy}")
             context = (
                 StrategicActionPrompts.create_strategy_formulation_prompt().format(
                     system_prompt=self.system_prompt,
@@ -84,16 +86,16 @@ class DebateBaseAgent(ABC):
             raise ValueError("Invalid state.")
         if self.use_strategic_prompt:
             strategy = state.get(self.role.value + "_strategy", "")
-            print(f"Using strategy {self.role.value + '_strategy'}: {strategy}")
+
             context = StrategicActionPrompts.create_middle_argument_prompt().format(
                 system_prompt=self.system_prompt,
                 role=self.role.value,
-                current_round=state['current_step'],
-                total_rounds=state['max_steps'],
+                current_round=state["current_step"],
+                total_rounds=state["max_steps"],
                 strategy=strategy,
-                opponent_last_argument=state['messages'][-1],
+                opponent_last_argument=state["messages"][-1],
                 messages=state["messages"][:-1],
-                rounds_remaining=state.get("max_steps", 3) - state['current_step'],
+                rounds_remaining=state.get("max_steps", 3) - state["current_step"],
             )
         else:
             context = ActionPrompts.create_argument_template().format(
@@ -112,12 +114,12 @@ class DebateBaseAgent(ABC):
 
         if self.use_strategic_prompt:
             strategy = state.get(self.role.value + "_strategy", "")
-            print(f"Using strategy {self.role.value + '_strategy'}: {strategy}")
+
             context = StrategicActionPrompts.create_conclusion_prompt().format(
                 system_prompt=self.system_prompt,
                 role=self.role.value,
                 messages=state["messages"],
-                strategy=strategy
+                strategy=strategy,
             )
         else:
             context = ActionPrompts.create_conclude_prompt().format(

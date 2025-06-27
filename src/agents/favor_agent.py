@@ -19,5 +19,6 @@ class FavorAgent(DebateBaseAgent):
         config: AgentConfig = AgentConfig(
             name="Favor", role=AgentRole.FAVOR, system_prompt=FAVOR_AGENT_SYSTEM_PROMPT
         ),
+        use_strategic_prompt: bool = False,
     ):
-        super().__init__(config, llm)
+        super().__init__(config, llm, use_strategic_prompt=use_strategic_prompt)
