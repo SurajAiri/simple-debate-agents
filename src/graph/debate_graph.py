@@ -5,125 +5,135 @@ from src.agents import AgainstAgent, DebateBaseAgent, FavorAgent, JudgeAgent
 from src.models.debate_state import AgentRole, DebateState
 
 
-def perform_action(state: DebateState, agent: DebateBaseAgent) -> str:
-    """
-    Perform the action based on the current turn.
-    """
-    if state["current_step"] == 1:
-        # first turn, introduce the topic and create strategies
-        return agent.introduce_topic(state)
-    if state["current_step"] < state["max_steps"]:
-        # in-between turns, create arguments
-        return agent.create_argument(state)
-    # last turn, conclude the debate
-    return agent.conclude_debate(state)
+class DebateGraph:
+    def __init__(
+        self,
+        model_name: str = "gemini-1.5-flash",
+        max_output_tokens: int = 1024,
+        temperature: float = 0.5,
+    ):
+        """
+        Initialize the DebateGraph with configurable LLM parameters.
+        """
+        self.model_name = model_name
+        self.max_output_tokens = max_output_tokens
+        self.temperature = temperature
+        self.app = self._build_graph()
+
+    def _create_llm(self):
+        """Create and return a configured LLM instance."""
+        return ChatGoogleGenerativeAI(
+            model=self.model_name,
+            max_output_tokens=self.max_output_tokens,
+            temperature=self.temperature,
+        )
+
+    def _perform_action(self, state: DebateState, agent: DebateBaseAgent) -> str:
+        """Perform the action based on the current turn."""
+        if state["current_step"] == 1:
+            return agent.introduce_topic(state)
+        if state["current_step"] < state["max_steps"]:
+            return agent.create_argument(state)
+        return agent.conclude_debate(state)
+
+    def _favor_agent(self, state: DebateState) -> DebateState:
+        """Favor agent's turn."""
+        llm = self._create_llm()
+        state["messages"].append(
+            ("Favor", self._perform_action(state, FavorAgent(llm=llm)))
+        )
+        state["current_turn"] = AgentRole.AGAINST
+        return state
+
+    def _against_agent(self, state: DebateState) -> DebateState:
+        """Against agent's turn."""
+        llm = self._create_llm()
+        state["messages"].append(
+            ("Against", self._perform_action(state, AgainstAgent(llm=llm)))
+        )
+        state["current_turn"] = AgentRole.FAVOR
+        state["current_step"] += 1
+        return state
+
+    def _judge_agent(self, state: DebateState) -> DebateState:
+        """Judge agent's turn."""
+        llm = self._create_llm()
+        state["messages"].append(
+            ("Judge", JudgeAgent(llm=llm).judge_and_conclude(state))
+        )
+        return state
+
+    def _is_favor_turn(self, state: DebateState) -> bool:
+        """Check if it's favor agent's turn."""
+        return state["current_turn"] == AgentRole.FAVOR
+
+    def _is_complete(self, state: DebateState) -> bool:
+        """Check if debate is complete."""
+        return state["current_step"] > state["max_steps"]
+
+    def _build_graph(self):
+        """Build and compile the debate graph."""
+        graph = StateGraph(DebateState)
+
+        # Add nodes
+        graph.add_node("favor_agent", self._favor_agent)
+        graph.add_node("against_agent", self._against_agent)
+        graph.add_node("judge_agent", self._judge_agent)
+        graph.add_node("agent_turn_check", lambda state: state)
+        graph.add_node("debate_complete_check", lambda state: state)
+
+        # Add edges
+        graph.add_edge(START, "agent_turn_check")
+        graph.add_conditional_edges(
+            "agent_turn_check",
+            self._is_favor_turn,
+            {True: "favor_agent", False: "against_agent"},
+        )
+        graph.add_conditional_edges(
+            "debate_complete_check",
+            self._is_complete,
+            {True: "judge_agent", False: "agent_turn_check"},
+        )
+        graph.add_edge("favor_agent", "debate_complete_check")
+        graph.add_edge("against_agent", "debate_complete_check")
+        graph.add_edge("judge_agent", END)
+
+        return graph.compile()
+
+    def run_debate(self, topic: str, max_steps: int = 3) -> dict:
+        """
+        Run a debate on the given topic.
+
+        Args:
+            topic: The debate topic
+            max_steps: Maximum number of debate rounds
+
+        Returns:
+            Dictionary containing the debate results
+        """
+        initial_state = {
+            "topic": topic,
+            "favor_strategy": "",
+            "against_strategy": "",
+            "messages": [],
+            "current_turn": AgentRole.FAVOR,
+            "current_step": 1,
+            "max_steps": max_steps,
+        }
+        return self.app.invoke(initial_state)
+
+    def print_debate(self, result: dict):
+        """Print the debate messages in a formatted way."""
+        for message in result["messages"]:
+            print(f"{message[0]}: {message[1]}")
+
+    def get_graph(self):
+        """Get the underlying graph for visualization or further manipulation."""
+        return self.app.get_graph().draw_mermaid_png()
 
 
-def favor_agent(state: DebateState) -> DebateState:
-    """
-    Favor the agent based on the current turn.
-    """
-    # turn is for favor (first talks)
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash",
-        max_output_tokens=1024,
-        temperature=0.5,
-    )
-
-    state["messages"].append(("Favor", perform_action(state, FavorAgent(llm=llm))))
-
-    state["current_turn"] = AgentRole.AGAINST
-
-    return state
-
-
-def against_agent(state: DebateState) -> DebateState:
-    """
-    Against agent's turn.
-    """
-    # turn is for against (second talks)
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash",
-        max_output_tokens=1024,
-        temperature=0.5,
-    )
-    state["messages"].append(("Against", perform_action(state, AgainstAgent(llm=llm))))
-
-    state["current_turn"] = AgentRole.FAVOR
-    state["current_step"] += 1
-
-    return state
-
-
-def judge_agent(state: DebateState) -> DebateState:
-    """
-    Judge agent's turn.
-    This is a placeholder for the judge agent logic.
-    """
-
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash",
-        max_output_tokens=1024,
-        temperature=0.5,
-    )
-    state["messages"].append(("Judge", JudgeAgent(llm=llm).judge_and_conclude(state)))
-
-    return state
-
-
-# conditional edges
-def is_favor_turn(state: DebateState) -> bool:
-    return state["current_turn"] == AgentRole.FAVOR
-
-
-def is_complete(state: DebateState) -> bool:
-    return state["current_step"] > state["max_steps"]
-
-
-graph = StateGraph(DebateState)
-
-# add nodes
-graph.add_node("favor_agent", favor_agent)
-graph.add_node("against_agent", against_agent)
-graph.add_node("judge_agent", judge_agent)
-graph.add_node("agent_turn_check", lambda state: state)
-graph.add_node("debate_complete_check", lambda state: state)
-
-
-# add edges
-graph.add_edge(START, "agent_turn_check")
-graph.add_conditional_edges(
-    "agent_turn_check", is_favor_turn, {True: "favor_agent", False: "against_agent"}
-)
-graph.add_conditional_edges(
-    "debate_complete_check",
-    is_complete,
-    {True: "judge_agent", False: "agent_turn_check"},
-)
-graph.add_edge("favor_agent", "debate_complete_check")
-graph.add_edge("against_agent", "debate_complete_check")
-graph.add_edge("judge_agent", END)
-
-
-# compile the graph
-app = graph.compile()
-
-# visualize the graph
-# from IPython.display import display, Image
-# display(Image(app.get_graph().draw_mermaid_png()))
-
-res = app.invoke(
-    {
-        "topic": "Is AI beneficial for society?",
-        "favor_strategy": "",
-        "against_strategy": "",
-        "messages": [],
-        "current_turn": AgentRole.FAVOR,
-        "current_step": 1,
-        "max_steps": 3,
-    }
-)
-
-# print(res['messages'])
-for message in res["messages"]:
-    print(f"{message[0]}: {message[1]}")
+# Usage example
+if __name__ == "__main__":
+    debate_graph = DebateGraph()
+    result = debate_graph.run_debate("Is AI beneficial for society?")
+    debate_graph.print_debate(result)

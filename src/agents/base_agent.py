@@ -32,7 +32,7 @@ class DebateBaseAgent(ABC):
             role=self.role.value,
             topic=state["topic"]
         )
-        return self.llm.invoke(context)
+        return self.llm.invoke(context).content
 
 
     def create_strategy(self, state: DebateState) -> str:
@@ -47,7 +47,7 @@ class DebateBaseAgent(ABC):
             role=self.role.value,
             messages=state["messages"]
         )
-        return self.llm.invoke(context)
+        return self.llm.invoke(context).content
 
     def create_argument(self, state: DebateState) -> str:
         """
@@ -61,7 +61,7 @@ class DebateBaseAgent(ABC):
             role=self.role.value,
             messages=state["messages"]
         )
-        return self.llm.invoke(context)
+        return self.llm.invoke(context).content
 
     
     def conclude_debate(self, state: DebateState) -> str:
@@ -76,7 +76,7 @@ class DebateBaseAgent(ABC):
             role=self.role.value,
             messages=state["messages"]
         )
-        return self.llm.invoke(context)
+        return self.llm.invoke(context).content
 
     def get_name(self) -> str:
         return self.name
