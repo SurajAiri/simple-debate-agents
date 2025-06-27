@@ -24,10 +24,10 @@ class ActionPrompts:
         return PromptTemplate.from_template(
             """{system_prompt}
             You are the {role} agent in a debate.
-            Given the following state of conversation:
-            {messages}
+            Given the following topic:
+            {topic}
 
-            Create your next strategy within 500 words."""
+            Create your next strategy that you will follow to defend your position and refute the opponent's argument within 500 words.""" # noqa: E501
         )
 
     @staticmethod

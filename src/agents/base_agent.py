@@ -5,7 +5,7 @@ from langchain_core.language_models import BaseLanguageModel
 from src.models.agent_config import AgentConfig
 from src.models.debate_state import AgentRole
 from src.models.debate_state import DebateState
-
+from src.prompts.action_prompts import ActionPrompts
 
 class DebateBaseAgent(ABC):
     """
@@ -27,21 +27,27 @@ class DebateBaseAgent(ABC):
         if not state or "topic" not in state or not self.system_prompt:
             raise ValueError("Invalid state or system prompt.")
 
-        context = self.system_prompt + "\n"
-        context += "You have to give the introduction to the debate topic.\n"
-        context += "Topic: " + state["topic"]
-        context += (
-            "\nYou are a "
-            + self.role.value
-            + " agent.\n"
-            + "And you have to give your introducing argument."
+        context = ActionPrompts.create_introduction_prompt().format(
+            system_prompt=self.system_prompt,
+            role=self.role.value,
+            topic=state["topic"]
         )
-        context += "It should not be more than 100 words."
         return self.llm.invoke(context)
 
-    @abstractmethod
+
     def create_strategy(self, state: DebateState) -> str:
-        pass
+        """
+        The agent will create a strategy based on the current state of the debate.
+        """
+        if not state or "messages" not in state:
+            raise ValueError("Invalid state.")
+
+        context = ActionPrompts.create_strategy_prompt().format(
+            system_prompt=self.system_prompt,
+            role=self.role.value,
+            messages=state["messages"]
+        )
+        return self.llm.invoke(context)
 
     def create_argument(self, state: DebateState) -> str:
         """
@@ -50,15 +56,10 @@ class DebateBaseAgent(ABC):
         if not state or "messages" not in state:
             raise ValueError("Invalid state.")
 
-        context = self.system_prompt + "\n"
-        context += "You have to create an argument for the debate.\n"
-        context += "Current state: " + str(state["messages"])
-        context += (
-            "\nYou are a "
-            + self.role.value
-            + " agent.\n"
-            + "And you have to create your argument, defend your position, or refute the opponent's argument."
-            + "\n It should not be more than 200 words."
+        context = ActionPrompts.create_argument_template().format(
+            system_prompt=self.system_prompt,
+            role=self.role.value,
+            messages=state["messages"]
         )
         return self.llm.invoke(context)
 
@@ -70,15 +71,10 @@ class DebateBaseAgent(ABC):
         if not state or "messages" not in state:
             raise ValueError("Invalid state.")
 
-        context = self.system_prompt + "\n"
-        context += "You have to conclude the debate.\n"
-        context += "Current state: " + str(state["messages"])
-        context += (
-            "\nYou are a "
-            + self.role.value
-            + " agent.\n"
-            + "And you have to conclude the debate."
-            + "\n It should not be more than 150 words."
+        context = ActionPrompts.create_conclude_prompt().format(
+            system_prompt=self.system_prompt,
+            role=self.role.value,
+            messages=state["messages"]
         )
         return self.llm.invoke(context)
 

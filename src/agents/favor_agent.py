@@ -12,9 +12,3 @@ class FavorAgent(DebateBaseAgent):
     """
     def __init__(self, config: AgentConfig, llm: BaseLanguageModel):
         super().__init__(config, llm)
-
-    def create_strategy(self, state: DebateState) -> str:
-        context = self.system_prompt + "\n"
-        context = context + "You have to create a strategy for the debate.\n"
-        context = context + "Current state: " + str(state['messages'])
-        return self.llm.invoke(context)
