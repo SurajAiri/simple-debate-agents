@@ -29,7 +29,7 @@ class JudgeAgent(DebateBaseAgent):
         context = ActionPrompts.judge_and_conclude_prompt().format(
             system_prompt=self.system_prompt, messages=state["messages"]
         )
-        return self.llm.invoke(context)
+        return self.llm.invoke(context).content
 
     def introduce_topic(self, state: DebateState) -> str:
         raise NotImplementedError("Judge agent cannot introduce topics")
