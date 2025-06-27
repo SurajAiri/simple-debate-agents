@@ -12,6 +12,18 @@ This system implements a three-agent debate architecture where specialized AI ag
 
 The system leverages LangGraph's state-driven execution model to orchestrate turn-based debates with phase-aware agent behavior.
 
+## System Variants
+
+### Simple Debate System
+The foundational debate system with transparent communication and straightforward argumentation patterns.
+
+### Strategic Debate System
+An advanced variant that extends the simple system with:
+- **Hidden Strategy Formulation**: Agents develop confidential debate strategies
+- **Psychological Manipulation**: Fact-based persuasion techniques and cognitive bias awareness
+- **Meta-Analysis**: Post-debate strategic assessment revealing hidden elements
+- **Enhanced Judge Evaluation**: Weighted criteria and strategic effectiveness analysis
+
 ## Key Features
 
 - **State-Driven Architecture**: Centralized [`DebateState`](src/models/debate_state.py) management with turn coordination
@@ -19,13 +31,20 @@ The system leverages LangGraph's state-driven execution model to orchestrate tur
 - **LLM Integration**: Powered by Google's Gemini models with configurable parameters
 - **Structured Output**: Enhanced formatting with color-coded agent responses
 - **Extensible Design**: Modular architecture supporting custom agent types and debate flows
+- **Strategic Intelligence**: Advanced prompt engineering for sophisticated debate tactics
 
 ## Architecture
 
 The system follows a deterministic state machine pattern:
 
+### Simple System Flow
 ```
 START → agent_turn_check → [favor_agent | against_agent] → debate_complete_check → [continue | judge_agent] → END
+```
+
+### Strategic System Flow
+```
+START → agent_turn_check → [favor_agent | against_agent] → debate_complete_check → [continue | judge_agent] → strategy_analysis → END
 ```
 
 ### Turn-Based Execution Model
@@ -42,9 +61,8 @@ graph TD
     F --> G[End Debate]
 ```
 
-Each agent inherits from [`DebateBaseAgent`](src/agents/base_agent.py) and utilizes structured prompts from [`ActionPrompts`](src/prompts/action_prompts.py) for consistent behavior. For detailed architecture information, see [docs/architecture.md](docs/architecture.md).
+Each agent inherits from [`DebateBaseAgent`](src/agents/base_agent.py) and utilizes structured prompts from [`ActionPrompts`](src/prompts/action_prompts.py) for basic functionality or [`StrategicActionPrompts`](src/prompts/strategic_action_prompts.py) for advanced strategic behavior. For detailed architecture information, see [docs/architecture.md](docs/architecture.md).
 
-## Preview. 
 ![System Preview](resources/example1.jpg)
 
 ## Prerequisites
@@ -74,12 +92,12 @@ cp .env.example .env
 
 ## Usage
 
-### Basic Debate Execution
+### Simple Debate System
 
 ```python
 from src.graph.debate_graph import DebateGraph
 
-# Initialize the debate system
+# Initialize the basic debate system
 debate_graph = DebateGraph(verbose=True)
 
 # Run a debate on any topic
@@ -89,20 +107,51 @@ result = debate_graph.run_debate("Is AI beneficial for society?", max_steps=3)
 debate_graph.print_debate(result)
 ```
 
+### Strategic Debate System
+
+```python
+from src.graph.strategic_debate_graph import StrategicDebateGraph
+
+# Initialize the strategic debate system
+strategic_graph = StrategicDebateGraph(verbose=True, use_strategic_prompt=True)
+
+# Run a strategic debate with hidden strategies
+result = strategic_graph.run_debate("Is AI beneficial for society?", max_steps=3)
+
+# Display results with strategy analysis
+strategic_graph.print_debate(result)
+```
+
 ### Command Line Usage
 
+**Simple Debate:**
 ```bash
 python main.py
+```
+
+**Strategic Debate:**
+```bash
+python strategy_debate.py
 ```
 
 ### Configurable Parameters
 
 ```python
+# Simple system
 debate_graph = DebateGraph(
     model_name="gemini-1.5-flash",
     max_output_tokens=1024,
     temperature=0.5,
     verbose=True
+)
+
+# Strategic system
+strategic_graph = StrategicDebateGraph(
+    model_name="gemini-1.5-flash",
+    max_output_tokens=1024,
+    temperature=0.5,
+    verbose=True,
+    use_strategic_prompt=True
 )
 ```
 
@@ -113,26 +162,52 @@ simple-discussion-agents/
 ├── src/
 │   ├── agents/          # AI agent implementations
 │   ├── graph/           # LangGraph debate orchestration
+│   │   ├── debate_graph.py           # Simple debate system
+│   │   └── strategic_debate_graph.py # Strategic debate system
 │   ├── models/          # Data models and state management
 │   ├── prompts/         # Prompt templates and configurations
-│   └── main.py         # Application entry point
+│   │   ├── action_prompts.py         # Basic prompts
+│   │   └── strategic_action_prompts.py # Strategic prompts
+│   └── utils/           # Utility functions
 ├── docs/               # Architecture documentation
+│   ├── architecture.md              # Simple system architecture
+│   └── strategic_debate_agent.md    # Strategic system architecture
 ├── resources/          # Assets and examples
 ├── tests/             # Test suite
-└── main.py           # CLI entry point
+├── main.py            # Simple debate CLI entry point
+└── strategy_debate.py # Strategic debate CLI entry point
 ```
 
 ## Core Components
 
-- **[`DebateGraph`](src/graph/debate_graph.py)**: Main orchestration engine using LangGraph
+- **[`DebateGraph`](src/graph/debate_graph.py)**: Main orchestration engine for simple debates
+- **[`StrategicDebateGraph`](src/graph/strategic_debate_graph.py)**: Advanced orchestration with strategic capabilities
 - **[`FavorAgent`](src/agents/favor_agent.py)**: Supports debate topics with logical arguments
 - **[`AgainstAgent`](src/agents/against_agent.py)**: Opposes topics with critical analysis
-- **[`JudgeAgent`](src/agents/judge_agent.py)**: Provides impartial evaluation and verdict
+- **[`JudgeAgent`](src/agents/judge_agent.py)**: Provides impartial evaluation and strategic analysis
 - **[`DebateState`](src/models/debate_state.py)**: Centralized state management
+
+## Strategic Features
+
+The strategic debate system introduces advanced capabilities:
+
+- **Strategy Formulation**: Hidden strategy development based on psychological principles
+- **Multi-layered Arguments**: Four-layer response strategy (defensive, offensive, psychological, adaptive)
+- **Fact-based Manipulation**: Ethical persuasion techniques using factual information
+- **Meta-Analysis**: Post-debate revelation of strategic effectiveness
+- **Enhanced Evaluation**: Weighted judge criteria and strategic assessment
+
+For detailed information about strategic capabilities, see [docs/strategic_debate_agent.md](docs/strategic_debate_agent.md).
 
 ## Example Output
 
 The system produces structured debates with color-coded agent responses, conversation history tracking, and comprehensive judge evaluations. Each debate progresses through introduction, argumentation, and conclusion phases with intelligent agent adaptation.
+
+**Strategic debates additionally provide:**
+- Hidden strategy revelation
+- Manipulation technique analysis
+- Strategic interaction assessment
+- Educational insights into debate tactics
 
 ## Contributing
 
