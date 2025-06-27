@@ -1,8 +1,10 @@
-from base_agent import DebateBaseAgent
 from langchain_core.language_models import BaseLanguageModel
 
 from src.models.agent_config import AgentConfig
-from src.models.debate_state import DebateState
+from src.models.debate_state import AgentRole
+from src.prompts.agent_prompts import AGAINST_AGENT_SYSTEM_PROMPT
+
+from .base_agent import DebateBaseAgent
 
 
 class AgainstAgent(DebateBaseAgent):
@@ -11,5 +13,13 @@ class AgainstAgent(DebateBaseAgent):
     This agent is responsible for opposing a position in the debate.
     """
 
-    def __init__(self, config: AgentConfig, llm: BaseLanguageModel):
+    def __init__(
+        self,
+        llm: BaseLanguageModel,
+        config: AgentConfig = AgentConfig(
+            name="Against",
+            role=AgentRole.AGAINST,
+            system_prompt=AGAINST_AGENT_SYSTEM_PROMPT,
+        ),
+    ):
         super().__init__(config, llm)

@@ -3,9 +3,9 @@ from abc import ABC, abstractmethod
 from langchain_core.language_models import BaseLanguageModel
 
 from src.models.agent_config import AgentConfig
-from src.models.debate_state import AgentRole
-from src.models.debate_state import DebateState
+from src.models.debate_state import AgentRole, DebateState
 from src.prompts.action_prompts import ActionPrompts
+
 
 class DebateBaseAgent(ABC):
     """
